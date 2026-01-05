@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Manage Projects</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen font-sans">
+
+    <div id="loginSection" class="fixed inset-0 z-50 bg-gray-900 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-96">
+            <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">Admin Login</h2>
+            <input type="email" id="email" placeholder="Email" class="w-full p-3 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <input type="password" id="password" placeholder="Password" class="w-full p-3 mb-6 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button onclick="login()" class="w-full bg-blue-600 text-white p-3 rounded font-bold hover:bg-blue-700 transition">Login</button>
+        </div>
+    </div>
+
+    <div id="dashboard" class="hidden max-w-6xl mx-auto p-6">
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Dashboard</h1>
+            <div class="flex items-center gap-4">
+                <div class="bg-white px-4 py-2 rounded-lg shadow flex items-center gap-2">
+                    <i class="fas fa-eye text-blue-500"></i>
+                    <span class="font-bold text-gray-700">Visitors: <span id="visitorCount">0</span></span>
+                </div>
+                <button onclick="logout()" class="text-red-500 font-semibold hover:underline">Logout</button>
+            </div>
+        </header>
+
+        <div class="bg-white p-6 rounded-xl shadow-md mb-8">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <i class="fas fa-plus-circle text-green-500"></i> Add New Project
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" id="pTitle" placeholder="Project Title" class="p-3 border rounded">
+                <input type="text" id="pLink" placeholder="Live Link URL" class="p-3 border rounded">
+                <input type="text" id="pRepo" placeholder="GitHub Repo URL" class="p-3 border rounded">
+                <input type="text" id="pIcon" placeholder="Icon Class (e.g., fas fa-code)" class="p-3 border rounded">
+                <input type="text" id="pTags" placeholder="Tags (e.g., HTML, CSS, React)" class="col-span-1 md:col-span-2 p-3 border rounded">
+                <textarea id="pDesc" placeholder="Description" rows="3" class="col-span-1 md:col-span-2 p-3 border rounded"></textarea>
+            </div>
+            <button onclick="addProject()" class="mt-4 bg-green-600 text-white px-6 py-2 rounded font-bold hover:bg-green-700 transition">Publish Project</button>
+        </div>
+
+        <h2 class="text-xl font-bold mb-4 text-gray-800">Existing Projects</h2>
+        <div id="projectsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, query, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- PASTE YOUR FIREBASE CONFIG HERE ---
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "SENDER_ID",
+            appId: "APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Auth Functions
+        window.login = async () => {
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('password').value;
+            try { await signInWithEmailAndPassword(auth, e, p); } catch(err) { alert(err.message); }
+        };
+        window.logout = () => signOut(auth);
+
+        onAuthStateChanged(auth, user => {
+            if(user) {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                initDashboard();
+            } else {
+                document.getElementById('loginSection').classList.remove('hidden');
+                document.getElementById('dashboard').classList.add('hidden');
+            }
+        });
+
+        function initDashboard() {
+            // 1. Listen for Projects
+            const q = query(collection(db, "projects"), orderBy("timestamp", "desc"));
+            onSnapshot(q, (snapshot) => {
+                const list = document.getElementById('projectsList');
+                list.innerHTML = "";
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    list.innerHTML += `
+                        <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500 relative group">
+                            <h3 class="font-bold text-lg">${data.title}</h3>
+                            <p class="text-sm text-gray-600 mb-2 truncate">${data.desc}</p>
+                            <div class="text-xs text-gray-400 mb-2">${data.tags}</div>
+                            <button onclick="deleteProject('${docSnap.id}')" class="absolute top-2 right-2 text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition"><i class="fas fa-trash"></i></button>
+                        </div>
+                    `;
+                });
+            });
+
+            // 2. Listen for Visitor Count
+            onSnapshot(doc(db, "analytics", "visitors"), (doc) => {
+                if(doc.exists()) document.getElementById('visitorCount').innerText = doc.data().count;
+            });
+        }
+
+        window.addProject = async () => {
+            try {
+                await addDoc(collection(db, "projects"), {
+                    title: document.getElementById('pTitle').value,
+                    link: document.getElementById('pLink').value,
+                    repo: document.getElementById('pRepo').value,
+                    icon: document.getElementById('pIcon').value,
+                    tags: document.getElementById('pTags').value,
+                    desc: document.getElementById('pDesc').value,
+                    timestamp: new Date()
+                });
+                alert("Project Added!");
+                // Clear inputs...
+            } catch(e) { alert("Error: " + e.message); }
+        };
+
+        window.deleteProject = async (id) => {
+            if(confirm("Delete this project?")) await deleteDoc(doc(db, "projects", id));
+        };
+    </script>
+</body>
+</html>
