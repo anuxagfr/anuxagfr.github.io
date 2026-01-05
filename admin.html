@@ -56,14 +56,16 @@
         import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, query, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- PASTE YOUR FIREBASE CONFIG HERE ---
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT.appspot.com",
-            messagingSenderId: "SENDER_ID",
-            appId: "APP_ID"
-        };
+      const firebaseConfig = {
+  apiKey: "AIzaSyC_U_pYSYWNm6Q1ufFwQE_tYlQZIYeDU0g",
+  authDomain: "cdn-generator.firebaseapp.com",
+  databaseURL: "https://cdn-generator-default-rtdb.firebaseio.com",
+  projectId: "cdn-generator",
+  storageBucket: "cdn-generator.firebasestorage.app",
+  messagingSenderId: "44677120607",
+  appId: "1:44677120607:web:b4719f7b7c6414cd19d1ea",
+  measurementId: "G-9RK16SGB09"
+};
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
