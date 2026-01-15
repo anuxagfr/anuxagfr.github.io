@@ -7,6 +7,11 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+ <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Glacial Indifference Font Import -->
+    <link href="https://fonts.cdnfonts.com/css/glacial-indifference-2" rel="stylesheet">
+   
+  
 
 </head>
 <body>
@@ -698,7 +703,51 @@
                 </div>
             </div>
         </div>
-    </section>  <section id="tools" class="tools">
+    </section>  
+      <div class="featured-wrapper">
+        <div class="section-header"></div>
+        
+        <div class="channel-spotlight">
+            <div class="glow-effect"></div>
+
+            <!-- Logo -->
+            <div class="logo-section">
+                <!-- Using your uploaded image here -->
+                <img id="channel-img" src="" alt="Channel Logo" class="channel-logo">
+            </div>
+
+            <!-- Content -->
+            <div class="content-section">
+                <h1 class="channel-name" id="channel-title"></h1>
+                
+                <!-- Handle Element -->
+                <span class="channel-handle" id="channel-handle"></span>
+                
+                <p class="channel-description" id="channel-desc">
+                    Master web development with hands-on tutorials. From HTML basics to advanced React patterns, learn to build modern websites.
+                </p>
+
+                <!-- Stats & Button Combined -->
+                <div class="action-bar">
+                    <div class="sub-stat">
+                        <span class="sub-number" id="sub-count"></span>
+                        <span class="sub-label">Subscribers</span>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <a id="channel-link" href="#" target="_blank" class="subscribe-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.33 29 29 0 0 0-.46-5.33z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" fill="white" stroke="none"></polygon></svg>
+                        Visit Channel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  
+    
+    <section id="tools" class="tools">
                 <div class="tools-category">
                     <h2 class="section-title">Tools & Platforms</h2>
                     <div class="tools-marquee-container">
@@ -1084,6 +1133,30 @@
     <script src="script.js"></script>
 <!-- Blogger JSONP Feed -->
 <script src="https://webcodeze.blogspot.com/feeds/posts/default?alt=json-in-script&max-results=3&callback=showBlogs"></script>
+  <script>
+        // --- DATA SECTION ---
+        const channelData = {
+            name: "coding x editz",
+            username: "@codingxeditz", 
+            subscribers: "10",
+            description: "Dedicated to helping you master web development. Check out tutorials on HTML, CSS, JavaScript and AI.", 
+            logoUrl: "https://cdn.jsdelivr.net/gh/anuxagfr/anuxagfr.github.io@main/icon/channels4_profile.jpg",
+            url: "https://www.youtube.com/@codingxeditz"
+        };
+
+        // Populate Data
+        document.getElementById('channel-title').textContent = channelData.name;
+        document.getElementById('channel-handle').textContent = channelData.username; 
+        document.getElementById('sub-count').textContent = channelData.subscribers;
+        document.getElementById('channel-desc').textContent = channelData.description;
+        document.getElementById('channel-img').src = channelData.logoUrl;
+        document.getElementById('channel-link').href = channelData.url;
+
+        // Fallback if image fails
+        document.getElementById('channel-img').onerror = function() {
+            this.src = 'https://placehold.co/200/101010/FFF?text=Img'; 
+        };
+    </script>
 
 </body>
 </html> 
