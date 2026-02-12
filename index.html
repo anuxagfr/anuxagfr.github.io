@@ -13,20 +13,21 @@
     <link href="https://fonts.cdnfonts.com/css/glacial-indifference-2" rel="stylesheet">
    
   
-<style >        /* --- THEME COLORS --- */
+<style > /* --- THEME COLORS --- */
         :root {
-            --primary-color: #2563EB; /* Vibrant Blue */
-            --bg-color: #f3f4f6;
-            --card-bg: #ffffff;
-            --text-main: #111827;
+            --primary-color: #2563EB; /* Bright Blue */
+            --primary-light: #eff6ff; /* Light Blue BG for icons */
+            --bg-color: #ffffff;
+            --text-main: #1f2937;
             --text-sec: #6b7280;
-            --highlight: #f59e0b; /* Gold/Yellow for badges */
-            --green: #10b981;
+            --border-color: #e5e7eb;
+            --highlight: #f59e0b; /* Orange/Gold for Best Value */
+            --checkmark-color: #10b981;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
+            background-color: #f9fafb;
             margin: 0;
             padding: 0;
         }
@@ -36,50 +37,52 @@
             text-align: center;
         }
 
+        /* Title Styling */
         .section-title {
             font-size: 2.5rem;
+            font-weight: 700;
             color: var(--text-main);
             margin-bottom: 10px;
             position: relative;
             display: inline-block;
         }
         
-        /* Yellow Underline */
         .section-title::after {
             content: '';
             display: block;
             width: 60px;
             height: 4px;
             background: var(--highlight);
-            margin: 10px auto 0;
+            margin: 8px auto 0;
             border-radius: 2px;
         }
 
         .section-subtitle {
             color: var(--text-sec);
-            margin-bottom: 40px;
+            margin-bottom: 50px;
             font-size: 1.1rem;
         }
 
-        /* --- NEW TAB NAVIGATION (Replaces Toggle) --- */
-        .tabs-container {
+        /* --- BUTTONS LAYOUT --- */
+        .category-tabs {
             display: flex;
             justify-content: center;
-            gap: 10px;
-            margin-bottom: 50px;
             flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 60px;
         }
 
         .tab-btn {
             padding: 12px 30px;
-            border: 2px solid #e5e7eb;
-            background: white;
+            background-color: #ffffff;
+            border: 1px solid var(--border-color);
             color: var(--text-sec);
-            border-radius: 50px;
-            font-size: 1rem;
+            border-radius: 50px; /* Pill shape */
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+            font-size: 1rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
         .tab-btn:hover {
@@ -87,25 +90,26 @@
             color: var(--primary-color);
         }
 
+        /* Active State (Blue Background) */
         .tab-btn.active {
             background-color: var(--primary-color);
             color: white;
             border-color: var(--primary-color);
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.4);
         }
 
         /* --- PRICING GRID --- */
         .pricing-grid {
-            display: none; /* Hidden by default */
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
             max-width: 1200px;
             margin: 0 auto;
+            animation: fadeIn 0.4s ease-out;
         }
 
         .pricing-grid.active-grid {
             display: grid;
-            animation: fadeIn 0.4s ease-in-out;
         }
 
         @keyframes fadeIn {
@@ -115,25 +119,24 @@
 
         /* --- CARD STYLING --- */
         .price-card {
-            background: var(--card-bg);
+            background: #ffffff;
             border-radius: 16px;
             padding: 40px 30px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-color);
             position: relative;
+            overflow: hidden;
+            text-align: left;
+            transition: transform 0.3s, box-shadow 0.3s;
             display: flex;
             flex-direction: column;
-            text-align: left;
         }
 
         .price-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            border-color: var(--primary-color);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
 
-        /* Popular Badge */
+        /* "BEST VALUE" RIBBON */
         .price-card.popular {
             border: 2px solid var(--primary-color);
         }
@@ -141,30 +144,32 @@
         .price-card.popular::before {
             content: "BEST VALUE";
             position: absolute;
-            top: 20px;
-            right: -32px;
+            top: 24px;
+            right: -34px;
             background: var(--highlight);
             color: white;
-            padding: 5px 40px;
+            padding: 6px 40px;
             transform: rotate(45deg);
             font-size: 0.75rem;
-            font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 2;
         }
 
-        /* SVG Icon Box */
-        .card-icon {
+        /* --- ICONS (SVG) --- */
+        .icon-box {
             width: 50px;
             height: 50px;
-            background-color: #eff6ff; /* Light blue bg */
+            background-color: var(--primary-light);
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
 
-        .card-icon svg {
+        .icon-box svg {
             width: 28px;
             height: 28px;
             color: var(--primary-color);
@@ -178,17 +183,18 @@
         }
 
         .plan-desc {
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             color: var(--text-sec);
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             line-height: 1.5;
+            min-height: 45px;
         }
 
         .price {
-            font-size: 2.5rem;
-            color: var(--primary-color);
+            font-size: 2rem;
+            color: var(--text-main);
             font-weight: 800;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             display: flex;
             align-items: baseline;
         }
@@ -203,25 +209,28 @@
         .features {
             list-style: none;
             padding: 0;
-            margin-bottom: 30px;
+            margin-bottom: 35px;
             flex-grow: 1;
         }
 
         .features li {
-            padding: 8px 0;
+            padding: 10px 0;
             color: var(--text-sec);
             font-size: 0.95rem;
             display: flex;
             align-items: flex-start;
+            border-bottom: 1px solid #f3f4f6;
         }
 
-        .features li::before {
-            content: "✓";
-            color: var(--green);
-            font-weight: 900;
+        .features li svg {
+            width: 20px;
+            height: 20px;
+            color: var(--checkmark-color);
             margin-right: 12px;
+            flex-shrink: 0;
         }
 
+        /* BUTTONS */
         .cta-btn {
             display: block;
             width: 100%;
@@ -231,14 +240,22 @@
             text-decoration: none;
             border-radius: 8px;
             font-weight: 600;
-            transition: background 0.3s;
             text-align: center;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: auto; /* Pushes button to bottom */
         }
 
         .cta-btn.outline {
-            background-color: transparent;
-            border: 2px solid var(--primary-color);
+            background-color: white;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+
+        .cta-btn.outline:hover {
+            border-color: var(--primary-color);
             color: var(--primary-color);
+            background-color: var(--primary-light);
         }
 
         .cta-btn:hover {
@@ -247,9 +264,9 @@
         }
 
         @media (max-width: 768px) {
-            .pricing-grid {
-                grid-template-columns: 1fr;
-            }
+            .category-tabs { gap: 10px; }
+            .tab-btn { padding: 10px 20px; font-size: 0.9rem; flex: 1 1 40%; }
+            .pricing-grid { grid-template-columns: 1fr; }
         }
 </style>
 </head>
@@ -1505,6 +1522,37 @@
 
         // 4. Add 'active' class to the clicked button (event.currentTarget works for inline onclick)
         event.currentTarget.classList.add("active");
+    }
+
+
+         // --- 1. WHATSAPP CONFIGURATION ---
+    const myPhoneNumber = "918287262645"; 
+
+    function openWhatsApp(planName, price) {
+        const text = `Hello, I am interested in the *${planName}* plan (${price}). Please let me know the process.`;
+        const whatsappURL = `https://wa.me/${myPhoneNumber}?text=${encodeURIComponent(text)}`;
+        window.open(whatsappURL, '_blank');
+    }
+
+    // --- 2. TAB SWITCHING LOGIC ---
+    function showCategory(category) {
+        // Hide all pricing grids
+        const allGrids = document.querySelectorAll('.pricing-grid');
+        allGrids.forEach(grid => grid.classList.remove('active-grid'));
+
+        // Remove active class from all buttons
+        const allTabs = document.querySelectorAll('.tab-btn');
+        allTabs.forEach(tab => tab.classList.remove('active'));
+
+        // Add active class to clicked button
+        event.currentTarget.classList.add('active');
+
+        // Show the selected grid
+        const targetId = category + '-pricing';
+        const targetGrid = document.getElementById(targetId);
+        if (targetGrid) {
+            targetGrid.classList.add('active-grid');
+        }
     }
     </script>
 
