@@ -1,139 +1,712 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Manage Projects</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body class="bg-gray-100 min-h-screen font-sans">
-
-    <div id="loginSection" class="fixed inset-0 z-50 bg-gray-900 flex items-center justify-center">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-96">
-            <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">Admin Login</h2>
-            <input type="email" id="email" placeholder="Email" class="w-full p-3 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <input type="password" id="password" placeholder="Password" class="w-full p-3 mb-6 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <button onclick="login()" class="w-full bg-blue-600 text-white p-3 rounded font-bold hover:bg-blue-700 transition">Login</button>
-        </div>
-    </div>
-
-    <div id="dashboard" class="hidden max-w-6xl mx-auto p-6">
-        <header class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-800">Dashboard</h1>
-            <div class="flex items-center gap-4">
-                <div class="bg-white px-4 py-2 rounded-lg shadow flex items-center gap-2">
-                    <i class="fas fa-eye text-blue-500"></i>
-                    <span class="font-bold text-gray-700">Visitors: <span id="visitorCount">0</span></span>
-                </div>
-                <button onclick="logout()" class="text-red-500 font-semibold hover:underline">Logout</button>
-            </div>
-        </header>
-
-        <div class="bg-white p-6 rounded-xl shadow-md mb-8">
-            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
-                <i class="fas fa-plus-circle text-green-500"></i> Add New Project
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input type="text" id="pTitle" placeholder="Project Title" class="p-3 border rounded">
-                <input type="text" id="pLink" placeholder="Live Link URL" class="p-3 border rounded">
-                <input type="text" id="pRepo" placeholder="GitHub Repo URL" class="p-3 border rounded">
-                <input type="text" id="pIcon" placeholder="Icon Class (e.g., fas fa-code)" class="p-3 border rounded">
-                <input type="text" id="pTags" placeholder="Tags (e.g., HTML, CSS, React)" class="col-span-1 md:col-span-2 p-3 border rounded">
-                <textarea id="pDesc" placeholder="Description" rows="3" class="col-span-1 md:col-span-2 p-3 border rounded"></textarea>
-            </div>
-            <button onclick="addProject()" class="mt-4 bg-green-600 text-white px-6 py-2 rounded font-bold hover:bg-green-700 transition">Publish Project</button>
-        </div>
-
-        <h2 class="text-xl font-bold mb-4 text-gray-800">Existing Projects</h2>
-        <div id="projectsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, query, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // --- PASTE YOUR FIREBASE CONFIG HERE ---
-      const firebaseConfig = {
-  apiKey: "AIzaSyC_U_pYSYWNm6Q1ufFwQE_tYlQZIYeDU0g",
-  authDomain: "cdn-generator.firebaseapp.com",
-  databaseURL: "https://cdn-generator-default-rtdb.firebaseio.com",
-  projectId: "cdn-generator",
-  storageBucket: "cdn-generator.firebasestorage.app",
-  messagingSenderId: "44677120607",
-  appId: "1:44677120607:web:b4719f7b7c6414cd19d1ea",
-  measurementId: "G-9RK16SGB09"
-};
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        // Auth Functions
-        window.login = async () => {
-            const e = document.getElementById('email').value;
-            const p = document.getElementById('password').value;
-            try { await signInWithEmailAndPassword(auth, e, p); } catch(err) { alert(err.message); }
-        };
-        window.logout = () => signOut(auth);
-
-        onAuthStateChanged(auth, user => {
-            if(user) {
-                document.getElementById('loginSection').classList.add('hidden');
-                document.getElementById('dashboard').classList.remove('hidden');
-                initDashboard();
-            } else {
-                document.getElementById('loginSection').classList.remove('hidden');
-                document.getElementById('dashboard').classList.add('hidden');
-            }
-        });
-
-        function initDashboard() {
-            // 1. Listen for Projects
-            const q = query(collection(db, "projects"), orderBy("timestamp", "desc"));
-            onSnapshot(q, (snapshot) => {
-                const list = document.getElementById('projectsList');
-                list.innerHTML = "";
-                snapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    list.innerHTML += `
-                        <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500 relative group">
-                            <h3 class="font-bold text-lg">${data.title}</h3>
-                            <p class="text-sm text-gray-600 mb-2 truncate">${data.desc}</p>
-                            <div class="text-xs text-gray-400 mb-2">${data.tags}</div>
-                            <button onclick="deleteProject('${docSnap.id}')" class="absolute top-2 right-2 text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition"><i class="fas fa-trash"></i></button>
-                        </div>
-                    `;
-                });
-            });
-
-            // 2. Listen for Visitor Count
-            onSnapshot(doc(db, "analytics", "visitors"), (doc) => {
-                if(doc.exists()) document.getElementById('visitorCount').innerText = doc.data().count;
-            });
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { card: '#1c2331', dark: '#0f172a' }
+          }
         }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #020617; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-300 min-h-screen flex overflow-hidden selection:bg-blue-500/30">
 
-        window.addProject = async () => {
-            try {
-                await addDoc(collection(db, "projects"), {
-                    title: document.getElementById('pTitle').value,
-                    link: document.getElementById('pLink').value,
-                    repo: document.getElementById('pRepo').value,
-                    icon: document.getElementById('pIcon').value,
-                    tags: document.getElementById('pTags').value,
-                    desc: document.getElementById('pDesc').value,
-                    timestamp: new Date()
-                });
-                alert("Project Added!");
-                // Clear inputs...
-            } catch(e) { alert("Error: " + e.message); }
-        };
+  <!-- Full Screen Loader (Waits for Firebase) -->
+  <div id="auth-loader" class="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center transition-opacity duration-500">
+    <i data-lucide="loader-2" class="w-12 h-12 text-blue-500 animate-spin mb-4"></i>
+    <h2 class="text-xl font-bold text-white">Connecting to Database...</h2>
+    <p class="text-slate-500 mt-2 text-sm" id="auth-status">Initializing Firebase Environment</p>
+  </div>
 
-        window.deleteProject = async (id) => {
-            if(confirm("Delete this project?")) await deleteDoc(doc(db, "projects", id));
-        };
-    </script>
+  <!-- Sidebar -->
+  <aside class="w-64 bg-brand-card border-r border-slate-800 flex flex-col h-screen shrink-0 relative z-20">
+    <div class="p-6 border-b border-slate-800 flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold">A</div>
+      <h1 class="text-white font-bold text-xl tracking-tight">Admin Panel</h1>
+    </div>
+    
+    <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+      <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-600 text-white font-medium transition-colors shadow-lg shadow-blue-500/20">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard
+      </button>
+      <button onclick="switchTab('projects')" id="nav-projects" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800/50 text-slate-400 hover:text-white transition-colors">
+        <i data-lucide="folder-code" class="w-5 h-5"></i> Projects
+      </button>
+      <button onclick="switchTab('services')" id="nav-services" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800/50 text-slate-400 hover:text-white transition-colors">
+        <i data-lucide="layers" class="w-5 h-5"></i> Services
+      </button>
+      <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800/50 text-slate-400 hover:text-white transition-colors">
+        <i data-lucide="settings" class="w-5 h-5"></i> Site Settings
+      </button>
+    </nav>
+
+    <div class="p-4 border-t border-slate-800">
+      <div class="flex items-center gap-3 px-4 py-2 bg-slate-900/50 rounded-lg border border-slate-800/50">
+        <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
+        <span class="text-xs text-slate-400 font-mono">DB Connected</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 h-screen overflow-y-auto bg-[#0f172a] relative">
+    
+    <!-- Top Header -->
+    <header class="sticky top-0 z-10 bg-[#0f172a]/90 backdrop-blur border-b border-slate-800 px-8 py-5 flex justify-between items-center">
+      <h2 id="page-title" class="text-2xl font-bold text-white">Dashboard Overview</h2>
+      <a href="#" target="_blank" class="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 px-4 py-2 rounded-full border border-blue-500/20">
+        View Live Site <i data-lucide="external-link" class="w-4 h-4"></i>
+      </a>
+    </header>
+
+    <div class="p-8 max-w-7xl mx-auto">
+      
+      <!-- ================== TAB: DASHBOARD ================== -->
+      <section id="tab-dashboard" class="tab-content active">
+        <!-- Stats Row -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div class="bg-brand-card border border-slate-800 rounded-xl p-6 shadow-lg">
+            <div class="flex justify-between items-start mb-4">
+              <div class="p-3 bg-blue-500/10 text-blue-400 rounded-lg border border-blue-500/20"><i data-lucide="eye" class="w-6 h-6"></i></div>
+              <span class="text-emerald-400 text-sm font-bold flex items-center gap-1"><i data-lucide="trending-up" class="w-4 h-4"></i> Active</span>
+            </div>
+            <h3 class="text-slate-400 text-sm font-medium">Status</h3>
+            <p class="text-2xl font-bold text-white mt-1" id="stat-status">Online</p>
+          </div>
+          
+          <div class="bg-brand-card border border-slate-800 rounded-xl p-6 shadow-lg">
+            <div class="flex justify-between items-start mb-4">
+              <div class="p-3 bg-purple-500/10 text-purple-400 rounded-lg border border-purple-500/20"><i data-lucide="folder-code" class="w-6 h-6"></i></div>
+            </div>
+            <h3 class="text-slate-400 text-sm font-medium">Total Projects</h3>
+            <p class="text-3xl font-bold text-white mt-1" id="stat-projects">0</p>
+          </div>
+
+          <div class="bg-brand-card border border-slate-800 rounded-xl p-6 shadow-lg">
+            <div class="flex justify-between items-start mb-4">
+              <div class="p-3 bg-yellow-500/10 text-yellow-400 rounded-lg border border-yellow-500/20"><i data-lucide="layers" class="w-6 h-6"></i></div>
+            </div>
+            <h3 class="text-slate-400 text-sm font-medium">Service Plans</h3>
+            <p class="text-3xl font-bold text-white mt-1" id="stat-services">0</p>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-brand-card border border-slate-800 rounded-xl p-6 mb-8 shadow-lg">
+          <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="zap" class="w-5 h-5 text-yellow-400"></i> Quick Actions</h3>
+          <div class="flex flex-wrap gap-4">
+            <button onclick="switchTab('projects'); setTimeout(openProjectModal, 100)" class="bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center gap-2 border border-slate-700">
+              <i data-lucide="plus" class="w-4 h-4 text-blue-400"></i> Add New Project
+            </button>
+            <button onclick="switchTab('services'); setTimeout(openServiceModal, 100)" class="bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center gap-2 border border-slate-700">
+              <i data-lucide="plus" class="w-4 h-4 text-purple-400"></i> Add Service Plan
+            </button>
+            <button onclick="switchTab('settings')" class="bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center gap-2 border border-slate-700">
+              <i data-lucide="megaphone" class="w-4 h-4 text-emerald-400"></i> Update Announcement
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================== TAB: PROJECTS ================== -->
+      <section id="tab-projects" class="tab-content">
+        <div class="flex justify-between items-center mb-6">
+          <p class="text-slate-400">Manage your featured and upcoming projects shown in the horizontal slider.</p>
+          <button onclick="openProjectModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2 shadow-lg shadow-blue-600/20">
+            <i data-lucide="plus" class="w-5 h-5"></i> Add Project
+          </button>
+        </div>
+
+        <div class="bg-brand-card border border-slate-800 rounded-xl overflow-hidden shadow-lg">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-900 border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider">
+                <th class="p-5 font-medium">Project</th>
+                <th class="p-5 font-medium">Category</th>
+                <th class="p-5 font-medium">Status</th>
+                <th class="p-5 font-medium text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="projects-table-body" class="divide-y divide-slate-800/50 text-sm">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+          <div id="projects-empty" class="hidden p-12 text-center text-slate-500 border-t border-slate-800">
+            <i data-lucide="folder-open" class="w-12 h-12 mx-auto mb-3 opacity-20"></i>
+            No projects found. Click "Add Project" to create one.
+          </div>
+        </div>
+      </section>
+
+      <!-- ================== TAB: SERVICES ================== -->
+      <section id="tab-services" class="tab-content">
+        <div class="flex justify-between items-center mb-6">
+          <p class="text-slate-400">Manage your pricing plans and service categories.</p>
+          <button onclick="openServiceModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2 shadow-lg shadow-blue-600/20">
+            <i data-lucide="plus" class="w-5 h-5"></i> Add Service
+          </button>
+        </div>
+
+        <div class="bg-brand-card border border-slate-800 rounded-xl overflow-hidden shadow-lg">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-900 border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider">
+                <th class="p-5 font-medium">Plan Title</th>
+                <th class="p-5 font-medium">Category Tab</th>
+                <th class="p-5 font-medium">Price</th>
+                <th class="p-5 font-medium text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="services-table-body" class="divide-y divide-slate-800/50 text-sm">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+          <div id="services-empty" class="hidden p-12 text-center text-slate-500 border-t border-slate-800">
+            <i data-lucide="layers" class="w-12 h-12 mx-auto mb-3 opacity-20"></i>
+            No services found. Click "Add Service" to create one.
+          </div>
+        </div>
+      </section>
+
+      <!-- ================== TAB: SETTINGS ================== -->
+      <section id="tab-settings" class="tab-content">
+        <div class="grid lg:grid-cols-2 gap-8">
+          
+          <!-- Site Status & Announcement -->
+          <div class="bg-brand-card border border-slate-800 rounded-xl p-8 shadow-lg">
+            <h3 class="text-xl font-bold text-white mb-6 border-b border-slate-800 pb-4">Global Configuration</h3>
+            
+            <form id="settings-form" class="space-y-6">
+              
+              <!-- Maintenance Mode -->
+              <div class="flex items-center justify-between p-5 bg-slate-900 border border-yellow-500/30 rounded-xl">
+                <div>
+                  <h4 class="font-bold text-white text-base">Maintenance Mode</h4>
+                  <p class="text-sm text-slate-400 mt-1">Hide portfolio from public visitors temporarily.</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="set-maintenance" class="sr-only peer">
+                  <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
+                </label>
+              </div>
+
+              <!-- Announcement Banner -->
+              <div>
+                <label class="block text-sm font-bold text-slate-300 mb-2">Global Announcement (Top Banner)</label>
+                <input type="text" id="set-announcement" placeholder="e.g., Exciting news! I just launched a new project..." class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+                <p class="text-xs text-slate-500 mt-2">Leave blank to hide the announcement bar entirely.</p>
+              </div>
+
+              <!-- Hero Banner Update -->
+              <div>
+                <label class="block text-sm font-bold text-slate-300 mb-2">Hero Background Image URL</label>
+                <input type="url" id="set-banner" placeholder="https://images.unsplash.com/photo-..." class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+                <p class="text-xs text-slate-500 mt-2">Used as the blurred background for the top hero section.</p>
+              </div>
+
+              <div class="pt-6 border-t border-slate-800 flex items-center">
+                <button type="button" onclick="saveSettings()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-lg shadow-blue-600/20">
+                  Save Changes
+                </button>
+                <span id="settings-save-msg" class="text-emerald-400 text-sm ml-4 opacity-0 transition-opacity bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20 flex items-center gap-1">
+                  <i data-lucide="check-circle-2" class="w-4 h-4"></i> Saved
+                </span>
+              </div>
+            </form>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ================== MODALS ================== -->
+
+  <!-- Project Modal -->
+  <div id="project-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-brand-card border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div class="sticky top-0 bg-brand-card border-b border-slate-800 p-6 flex justify-between items-center z-10">
+        <h3 class="text-xl font-bold text-white" id="project-modal-title">Add Project</h3>
+        <button onclick="closeModal('project-modal')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+      </div>
+      <form id="project-form" class="p-6 space-y-5">
+        <input type="hidden" id="proj-id">
+        
+        <div class="grid grid-cols-2 gap-5">
+          <div class="col-span-2">
+            <label class="block text-sm font-medium text-slate-400 mb-1">Project Title</label>
+            <input type="text" id="proj-title" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-400 mb-1">Category (Filter Tab)</label>
+            <input type="text" id="proj-category" required placeholder="e.g. Websites, Bots, Tools" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-400 mb-1">Status</label>
+            <select id="proj-status" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
+              <option value="Live">Live / Completed</option>
+              <option value="Upcoming">Upcoming / WIP</option>
+            </select>
+          </div>
+          <div class="col-span-2">
+            <label class="block text-sm font-medium text-slate-400 mb-1">Description</label>
+            <textarea id="proj-desc" rows="3" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors resize-none"></textarea>
+          </div>
+          <div class="col-span-2">
+            <label class="block text-sm font-medium text-slate-400 mb-1">Tech Stack (Comma Separated)</label>
+            <input type="text" id="proj-tech" placeholder="HTML, CSS, React, Python" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
+          </div>
+          <div class="col-span-2">
+            <label class="block text-sm font-medium text-slate-400 mb-1">Thumbnail Image URL</label>
+            <input type="url" id="proj-img" placeholder="https://..." required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-400 mb-1">GitHub Link (Optional)</label>
+            <input type="url" id="proj-github" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-400 mb-1">Live Link (Optional)</label>
+            <input type="url" id="proj-live" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
+          </div>
+          <div class="col-span-2 mt-2 p-4 bg-slate-900 border border-slate-800 rounded-lg">
+            <label class="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" id="proj-highlight" class="w-5 h-5 rounded border-slate-700 bg-slate-800 text-yellow-500 focus:ring-yellow-500 focus:ring-offset-slate-900">
+              <span class="text-sm font-bold text-yellow-400">🌟 Highlight this project (Shows first in list)</span>
+            </label>
+          </div>
+        </div>
+        <div class="pt-6 border-t border-slate-800 flex justify-end gap-4">
+          <button type="button" onclick="closeModal('project-modal')" class="px-5 py-2.5 text-slate-400 hover:text-white transition-colors">Cancel</button>
+          <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-lg font-bold transition-colors shadow-lg shadow-blue-600/20">Save Project</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Service Modal -->
+  <div id="service-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-brand-card border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div class="sticky top-0 bg-brand-card border-b border-slate-800 p-6 flex justify-between items-center z-10">
+        <h3 class="text-xl font-bold text-white" id="service-modal-title">Add Service Plan</h3>
+        <button onclick="closeModal('service-modal')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+      </div>
+      <form id="service-form" class="p-6 space-y-5">
+        <input type="hidden" id="srv-id">
+        
+        <div class="grid grid-cols-2 gap-5">
+          <div class="col-span-2 md:col-span-1">
+            <label class="block text-sm font-medium text-slate-400 mb-1">Plan Title</label>
+            <input type="text" id="srv-title" required placeholder="e.g. Viral Edit" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
+          </div>
+          <div class="col-span-2 md:col-span-1">
+            <label class="block text-sm font-medium text-slate-400 mb-1">Category Tab Name</label>
+            <input type="text" id="srv-category" required placeholder="e.g. Short Videos" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
+          </div>
+          <div class="col-span-2 md:col-span-1">
+            <label class="block text-sm font-medium text-slate-400 mb-1">Price String</label>
+            <input type="text" id="srv-price" required placeholder="e.g. ₹700" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
+          </div>
+          <div class="col-span-2 md:col-span-1">
+            <label class="block text-sm font-medium text-slate-400 mb-1">Lucide Icon Name</label>
+            <input type="text" id="srv-icon" required placeholder="e.g. zap, flame, code" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
+          </div>
+          <div class="col-span-2">
+            <label class="block text-sm font-medium text-slate-400 mb-1">Short Description</label>
+            <textarea id="srv-desc" rows="2" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors resize-none"></textarea>
+          </div>
+          <div class="col-span-2">
+            <label class="block text-sm font-medium text-slate-400 mb-1">Features (One per line)</label>
+            <textarea id="srv-features" rows="4" required placeholder="Up to 60 Seconds&#10;Colored Captions&#10;Sound Effects" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors leading-relaxed"></textarea>
+          </div>
+          <div class="col-span-2 mt-2 p-4 bg-slate-900 border border-slate-800 rounded-lg">
+            <label class="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" id="srv-popular" class="w-5 h-5 rounded border-slate-700 bg-slate-800 text-yellow-500 focus:ring-yellow-500 focus:ring-offset-slate-900">
+              <span class="text-sm font-bold text-yellow-400">🔥 Mark as "Best Value" (Adds ribbon to card)</span>
+            </label>
+          </div>
+        </div>
+        <div class="pt-6 border-t border-slate-800 flex justify-end gap-4">
+          <button type="button" onclick="closeModal('service-modal')" class="px-5 py-2.5 text-slate-400 hover:text-white transition-colors">Cancel</button>
+          <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-lg font-bold transition-colors shadow-lg shadow-blue-600/20">Save Service</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- Firebase Integration & App Logic -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, doc, setDoc, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Setup Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyD87v7lPqBaWmI3SfnoJfVYoEcBm-svbV8",
+      authDomain: "anuxagfr-portfolio.firebaseapp.com",
+      projectId: "anuxagfr-portfolio",
+      storageBucket: "anuxagfr-portfolio.firebasestorage.app",
+      messagingSenderId: "806338188893",
+      appId: "1:806338188893:web:e929cc497628f7236f1fb4",
+      measurementId: "G-PBBX1X894Z"
+    };
+    
+    // CRITICAL FIX: Add the missing appId string!
+    const appId = "anurag-portfolio";
+
+    let app, auth, db;
+    try {
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+    } catch(e) {
+      document.getElementById('auth-status').innerText = "Configuration Error.";
+      console.error("Firebase init error:", e);
+    }
+
+    let currentUser = null;
+    let dbProjects = [];
+    let dbServices = [];
+
+    lucide.createIcons();
+
+    // Setup Auth
+    async function initAuth() {
+      if(!auth) return; 
+      try {
+        await signInAnonymously(auth);
+      } catch (error) {
+        console.error("Authentication Error:", error);
+        document.getElementById('auth-status').innerText = "Auth Failed! Did you enable Anonymous login in Firebase?";
+      }
+    }
+
+    if(auth) {
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          currentUser = user;
+          document.getElementById('auth-loader').classList.add('opacity-0', 'pointer-events-none');
+          setTimeout(() => document.getElementById('auth-loader').style.display = 'none', 500);
+          setupDatabaseListeners();
+        }
+      });
+      initAuth();
+    }
+
+    // Firestore Paths
+    function getProjectsRef() { return collection(db, 'artifacts', appId, 'public', 'data', 'projects'); }
+    function getServicesRef() { return collection(db, 'artifacts', appId, 'public', 'data', 'services'); }
+    function getSettingsRef() { return doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global'); }
+
+    // Setup Firestore Listeners
+    function setupDatabaseListeners() {
+      onSnapshot(getProjectsRef(), (snapshot) => {
+        dbProjects = [];
+        snapshot.forEach(doc => dbProjects.push({ id: doc.id, ...doc.data() }));
+        renderProjects();
+        document.getElementById('stat-projects').innerText = dbProjects.length;
+      }, (error) => console.error(error));
+
+      onSnapshot(getServicesRef(), (snapshot) => {
+        dbServices = [];
+        snapshot.forEach(doc => dbServices.push({ id: doc.id, ...doc.data() }));
+        renderServices();
+        document.getElementById('stat-services').innerText = dbServices.length;
+      }, (error) => console.error(error));
+
+      onSnapshot(getSettingsRef(), (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          document.getElementById('set-maintenance').checked = data.maintenanceMode || false;
+          document.getElementById('set-announcement').value = data.announcement || '';
+          document.getElementById('set-banner').value = data.bannerUrl || '';
+          
+          document.getElementById('stat-status').innerText = data.maintenanceMode ? 'Maintenance' : 'Online';
+          document.getElementById('stat-status').className = `text-2xl font-bold mt-1 ${data.maintenanceMode ? 'text-yellow-400' : 'text-emerald-400'}`;
+        }
+      }, (error) => console.error(error));
+    }
+
+    // UI TAB LOGIC
+    window.switchTab = function(tabId) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.getElementById('tab-' + tabId).classList.add('active');
+      
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800/50 text-slate-400 hover:text-white transition-colors";
+      });
+      document.getElementById('nav-' + tabId).className = "nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-600 text-white font-medium transition-colors shadow-lg shadow-blue-500/20";
+
+      const titles = { 'dashboard': 'Dashboard Overview', 'projects': 'Manage Projects', 'services': 'Pricing & Services', 'settings': 'Site Settings' };
+      document.getElementById('page-title').innerText = titles[tabId];
+    }
+
+    // MODAL LOGIC
+    window.openModal = function(id) {
+      document.getElementById(id).classList.remove('hidden');
+      document.getElementById(id).classList.add('flex');
+    }
+    window.closeModal = function(id) {
+      document.getElementById(id).classList.add('hidden');
+      document.getElementById(id).classList.remove('flex');
+    }
+
+    // PROJECTS LOGIC
+    window.openProjectModal = function(id = null) {
+      const form = document.getElementById('project-form');
+      form.reset();
+      document.getElementById('proj-id').value = '';
+      document.getElementById('project-modal-title').innerText = 'Add Project';
+      
+      if (id) {
+        const p = dbProjects.find(x => x.id === id);
+        if(p) {
+          document.getElementById('project-modal-title').innerText = 'Edit Project';
+          document.getElementById('proj-id').value = p.id;
+          document.getElementById('proj-title').value = p.title;
+          document.getElementById('proj-category').value = p.category || 'Websites';
+          document.getElementById('proj-status').value = p.status || 'Live';
+          document.getElementById('proj-desc').value = p.description;
+          document.getElementById('proj-tech').value = (p.tech || []).join(', ');
+          document.getElementById('proj-img').value = p.image || '';
+          document.getElementById('proj-github').value = p.github || '';
+          document.getElementById('proj-live').value = p.live || '';
+          document.getElementById('proj-highlight').checked = p.isHighlighted || false;
+        }
+      }
+      openModal('project-modal');
+    }
+
+    document.getElementById('project-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if(!currentUser) return alert("Not authenticated!");
+
+      const id = document.getElementById('proj-id').value;
+      const data = {
+        title: document.getElementById('proj-title').value,
+        category: document.getElementById('proj-category').value,
+        status: document.getElementById('proj-status').value,
+        description: document.getElementById('proj-desc').value,
+        tech: document.getElementById('proj-tech').value.split(',').map(s=>s.trim()).filter(s=>s),
+        image: document.getElementById('proj-img').value,
+        github: document.getElementById('proj-github').value,
+        live: document.getElementById('proj-live').value,
+        isHighlighted: document.getElementById('proj-highlight').checked,
+        updatedAt: new Date().toISOString()
+      };
+
+      try {
+        if(id) {
+          await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'projects', id), data);
+        } else {
+          await addDoc(getProjectsRef(), data);
+        }
+        closeModal('project-modal');
+      } catch(err) {
+        console.error("Save error:", err);
+        alert("Failed to save project.");
+      }
+    });
+
+    window.deleteProject = async function(id) {
+      if(confirm("Are you sure you want to delete this project?")) {
+        try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'projects', id)); } 
+        catch(err) { console.error("Delete error:", err); }
+      }
+    }
+
+    function renderProjects() {
+      const tbody = document.getElementById('projects-table-body');
+      const empty = document.getElementById('projects-empty');
+      tbody.innerHTML = '';
+      
+      if(dbProjects.length === 0) {
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      const sorted = [...dbProjects].sort((a,b) => (b.isHighlighted?1:0) - (a.isHighlighted?1:0));
+
+      sorted.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/30 transition-colors";
+        tr.innerHTML = `
+          <td class="p-5">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 rounded-lg bg-slate-800 shrink-0 overflow-hidden border border-slate-700">
+                ${p.image ? `<img src="${p.image}" class="w-full h-full object-cover">` : `<i data-lucide="image" class="w-full h-full p-3 text-slate-600"></i>`}
+              </div>
+              <div>
+                <p class="font-bold text-white flex items-center gap-2">
+                  ${p.title} 
+                  ${p.isHighlighted ? '<i data-lucide="star" class="w-3.5 h-3.5 text-yellow-500 fill-yellow-500"></i>' : ''}
+                </p>
+                <p class="text-xs text-slate-500 truncate max-w-[200px] md:max-w-[300px] mt-0.5">${p.description}</p>
+              </div>
+            </div>
+          </td>
+          <td class="p-5">
+            <span class="px-2.5 py-1 bg-slate-800 text-slate-300 rounded border border-slate-700 text-xs font-medium">${p.category}</span>
+          </td>
+          <td class="p-5">
+            <span class="px-2.5 py-1 rounded text-xs font-bold ${p.status === 'Live' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-orange-500/10 text-orange-400 border border-orange-500/20'}">
+              ${p.status || 'Live'}
+            </span>
+          </td>
+          <td class="p-5 text-right">
+            <button onclick="openProjectModal('${p.id}')" class="p-2 text-slate-400 hover:text-blue-400 transition-colors"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+            <button onclick="deleteProject('${p.id}')" class="p-2 text-slate-400 hover:text-red-400 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      lucide.createIcons();
+    }
+
+
+    // SERVICES LOGIC
+    window.openServiceModal = function(id = null) {
+      const form = document.getElementById('service-form');
+      form.reset();
+      document.getElementById('srv-id').value = '';
+      document.getElementById('service-modal-title').innerText = 'Add Service';
+      
+      if (id) {
+        const s = dbServices.find(x => x.id === id);
+        if(s) {
+          document.getElementById('service-modal-title').innerText = 'Edit Service';
+          document.getElementById('srv-id').value = s.id;
+          document.getElementById('srv-title').value = s.title;
+          document.getElementById('srv-category').value = s.category;
+          document.getElementById('srv-price').value = s.price;
+          document.getElementById('srv-icon').value = s.icon || 'zap';
+          document.getElementById('srv-desc').value = s.desc;
+          document.getElementById('srv-features').value = (s.features || []).join('\n');
+          document.getElementById('srv-popular').checked = s.isPopular || false;
+        }
+      }
+      openModal('service-modal');
+    }
+
+    document.getElementById('service-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if(!currentUser) return alert("Not authenticated!");
+
+      const id = document.getElementById('srv-id').value;
+      const data = {
+        title: document.getElementById('srv-title').value,
+        category: document.getElementById('srv-category').value,
+        price: document.getElementById('srv-price').value,
+        icon: document.getElementById('srv-icon').value,
+        desc: document.getElementById('srv-desc').value,
+        features: document.getElementById('srv-features').value.split('\n').map(s=>s.trim()).filter(s=>s),
+        isPopular: document.getElementById('srv-popular').checked,
+        updatedAt: new Date().toISOString()
+      };
+
+      try {
+        if(id) {
+          await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'services', id), data);
+        } else {
+          await addDoc(getServicesRef(), data);
+        }
+        closeModal('service-modal');
+      } catch(err) {
+        console.error("Save error:", err);
+        alert("Failed to save service.");
+      }
+    });
+
+    window.deleteService = async function(id) {
+      if(confirm("Are you sure you want to delete this plan?")) {
+        try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'services', id)); } 
+        catch(err) { console.error("Delete error:", err); }
+      }
+    }
+
+    function renderServices() {
+      const tbody = document.getElementById('services-table-body');
+      const empty = document.getElementById('services-empty');
+      tbody.innerHTML = '';
+      
+      if(dbServices.length === 0) {
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      const sorted = [...dbServices].sort((a,b) => a.category.localeCompare(b.category));
+
+      sorted.forEach(s => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/30 transition-colors";
+        tr.innerHTML = `
+          <td class="p-5">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                <i data-lucide="${s.icon || 'star'}" class="w-5 h-5"></i>
+              </div>
+              <p class="font-bold text-white flex flex-col items-start gap-1">
+                ${s.title}
+                ${s.isPopular ? '<span class="px-2 py-0.5 rounded text-[9px] bg-yellow-500/20 text-yellow-500 border border-yellow-500/20 uppercase tracking-wider">Popular</span>' : ''}
+              </p>
+            </div>
+          </td>
+          <td class="p-5"><span class="px-2.5 py-1 bg-slate-800 text-slate-300 rounded border border-slate-700 text-xs font-medium">${s.category}</span></td>
+          <td class="p-5 font-mono font-bold text-white">${s.price}</td>
+          <td class="p-5 text-right">
+            <button onclick="openServiceModal('${s.id}')" class="p-2 text-slate-400 hover:text-blue-400 transition-colors"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+            <button onclick="deleteService('${s.id}')" class="p-2 text-slate-400 hover:text-red-400 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      lucide.createIcons();
+    }
+
+    // SETTINGS LOGIC
+    window.saveSettings = async function() {
+      if(!currentUser) return alert("Not authenticated!");
+      const data = {
+        maintenanceMode: document.getElementById('set-maintenance').checked,
+        announcement: document.getElementById('set-announcement').value,
+        bannerUrl: document.getElementById('set-banner').value,
+        updatedAt: new Date().toISOString()
+      };
+
+      try {
+        await setDoc(getSettingsRef(), data, { merge: true });
+        const msg = document.getElementById('settings-save-msg');
+        msg.classList.remove('opacity-0');
+        setTimeout(() => msg.classList.add('opacity-0'), 3000);
+      } catch(err) {
+        console.error("Save error:", err);
+        alert("Failed to save settings.");
+      }
+    }
+  </script>
 </body>
 </html>
+
+
